@@ -15,5 +15,18 @@ packages:
 
 tests: True
 
+-- IPV6 is disabled in the Github Actions environment,
+-- so we make sure the appropriate tests in those packages
+-- turn to IPV4.
+package thrift-lib
+  flags: +tests_use_ipv4
+package thrift-server
+  flags: +tests_use_ipv4
+
 -- necessary to use a haskeline <0.8 with GHCs that ship with base >= 4.14
 allow-newer: haskeline:base
+
+package glean-clang
+--   extra-include-dirs: /usr/lib/llvm-11/include
+--   extra-lib-dirs: /usr/lib/llvm-11/lib
+--   ghc-options: -pgmc /usr/bin/clang-11 -pgml /usr/bin/clang-11 -pgma /usr/bin/clang-11

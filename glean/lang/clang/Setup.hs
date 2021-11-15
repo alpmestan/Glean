@@ -1,6 +1,6 @@
 -- This a slight adaptation of the llvm-hs Setup.hs:
 -- https://github.com/llvm-hs/llvm-hs/blob/llvm-12/llvm-hs/Setup.hs
-{-# LANGUAGE CPP, FlexibleInstances #-}
+{-# LANGUAGE CPP, FlexibleInstances, TupleSections #-}
 import Control.Exception (SomeException, try)
 import Control.Monad
 import Data.Char
@@ -14,13 +14,8 @@ import Distribution.Simple.PreProcess
 import Distribution.Simple.Program
 import Distribution.Simple.Setup hiding (Flag)
 import Distribution.System
+import qualified Distribution.Types.Executable as Exe
 import System.Environment
-
-#ifdef MIN_VERSION_Cabal
-#if MIN_VERSION_Cabal(2,0,0)
-#define MIN_VERSION_Cabal_2_0_0
-#endif
-#endif
 
 -- define these selectively in C files (we are _not_ using HsFFI.h),
 -- rather than universally in the ccOptions, because HsFFI.h currently defines them
@@ -28,29 +23,14 @@ import System.Environment
 uncheckedHsFFIDefines :: [String]
 uncheckedHsFFIDefines = ["__STDC_LIMIT_MACROS"]
 
-#ifndef MIN_VERSION_Cabal_2_0_0
-mkVersion :: [Int] -> Version
-mkVersion ver = Version ver []
-versionNumbers :: Version -> [Int]
-versionNumbers = versionBranch
-mkFlagName :: String -> FlagName
-mkFlagName = FlagName
-#endif
-
-#if !(MIN_VERSION_Cabal(2,1,0))
-lookupFlagAssignment :: FlagName -> FlagAssignment -> Maybe Bool
-lookupFlagAssignment = lookup
-#endif
-
 llvmVersions :: [Version]
-llvmVersions = -- [ mkVersion [a,b,c] | a <- [11, 12], b <- [0, 1], c <- [0, 1] ]
-  [ [a] :
-    concat [ [a, b] :
-             concat [ [a, b, c]
-             | c <- versions_c
-             ]
-           | b <- versions_b
-           ]
+llvmVersions = map mkVersion $ concat
+  [ concat
+    [ [ [a, b, c]
+      | c <- versions_c
+      ] ++ [[a, b]]
+    | b <- versions_b
+    ] ++ [[a]]
   | a <- versions_a
   ]
 
@@ -90,9 +70,11 @@ getLLVMConfig :: ConfigFlags -> IO ([String] -> IO String)
 getLLVMConfig confFlags = do
   let verbosity = fromFlag $ configVerbosity confFlags
   (program, _, _) <- requireProgramVersion verbosity llvmProgram
-                     (withinVersion llvmVersion)
+                     llvmVersionsRange
                      (configPrograms confFlags)
   return $ getProgramOutput verbosity program
+
+  where llvmVersionsRange = foldr1 unionVersionRanges [ thisVersion v | v <- llvmVersions ]
 
 addToLdLibraryPath :: String -> IO ()
 addToLdLibraryPath path = do
@@ -134,7 +116,7 @@ main :: IO ()
 main = do
   let origUserHooks = simpleUserHooks
 
-  defaultMainWithHooks origUserHooks {
+  defaultMainWithHooks (origUserHooks {
     hookedPrograms = [ llvmProgram ],
 
     confHook = \(genericPackageDescription, hookedBuildInfo) confFlags -> do
@@ -151,25 +133,27 @@ main = do
       [llvmVersion] <- liftM lines $ llvmConfig ["--version"]
       let getLibs = liftM (map (fromJust . stripPrefix "-l") . words) . llvmConfig
           flags    = configConfigurationsFlags confFlags
-          linkFlag = case lookupFlagAssignment (mkFlagName "shared-llvm") flags of
-                       Nothing     -> "--link-shared"
-                       Just shared -> if shared then "--link-shared" else "--link-static"
+          linkFlag = "--link-shared"
       libs       <- getLibs ["--libs", linkFlag]
       systemLibs <- getLibs ["--system-libs", linkFlag]
 
-      let genericPackageDescription' = genericPackageDescription {
-            condLibrary = do
-              libraryCondTree <- condLibrary genericPackageDescription
-              return libraryCondTree {
-                condTreeData = condTreeData libraryCondTree <> mempty {
-                    libBuildInfo =
-                      mempty {
-                        ccOptions = llvmCxxFlags,
-                        extraLibs = libs ++ stdLib : systemLibs
-                      }
+      let llvmBuildInfo = mempty {
+            extraLibs = libs ++ stdLib : systemLibs
+            }
+          genericPackageDescription' = genericPackageDescription
+            { condLibrary = do -- maybe monad
+                libraryCondTree <- condLibrary genericPackageDescription
+                return libraryCondTree {
+                  condTreeData = condTreeData libraryCondTree <>
+                                 mempty { libBuildInfo = llvmBuildInfo }
                   }
-              }
-           }
+            , condExecutables = do -- list monad
+                (name, exeCondTree) <- condExecutables genericPackageDescription
+                return . (name,) $ exeCondTree {
+                  condTreeData = condTreeData exeCondTree <>
+                                 mempty { Exe.buildInfo = llvmBuildInfo }
+                  }
+            }
           configFlags' = confFlags {
             configExtraLibDirs = libDirs ++ configExtraLibDirs confFlags,
             configExtraIncludeDirs = includeDirs ++ configExtraIncludeDirs confFlags
@@ -179,11 +163,7 @@ main = do
 
     hookedPreProcessors =
       let origHookedPreprocessors = hookedPreProcessors origUserHooks
-#ifdef MIN_VERSION_Cabal_2_0_0
           newHsc buildInfo localBuildInfo componentLocalBuildInfo =
-#else
-          newHsc buildInfo localBuildInfo =
-#endif
               PreProcessor {
                   platformIndependent = platformIndependent (origHsc buildInfo),
                   runPreProcessor = \inFiles outFiles verbosity -> do
@@ -200,9 +180,7 @@ main = do
                         (lookup "hsc" origHookedPreprocessors)
                         buildInfo'
                         localBuildInfo
-#ifdef MIN_VERSION_Cabal_2_0_0
                         componentLocalBuildInfo
-#endif
       in [("hsc", newHsc)] ++ origHookedPreprocessors,
 
     buildHook = \packageDesc localBuildInfo userHooks buildFlags ->
@@ -212,4 +190,4 @@ main = do
     testHook = \args packageDesc localBuildInfo userHooks testFlags ->
       do addLLVMToLdLibraryPath (configFlags localBuildInfo)
          testHook origUserHooks args packageDesc localBuildInfo userHooks testFlags
-   }
+   })

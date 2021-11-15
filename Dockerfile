@@ -32,9 +32,9 @@ RUN cat /react-code/scripts/flow/config/flowconfig \
       | grep -v REACT_RENDERER_FLOW_OPTIONS \
       | grep -v suppress_comment > /react-code/.flowconfig
 
-FROM ubuntu:20.04 AS demo
+# FROM ubuntu:20.04 AS demo
 
-LABEL org.opencontainers.image.source="https://github.com/facebookincubator/Glean"
+# LABEL org.opencontainers.image.source="https://github.com/facebookincubator/Glean"
 
 ENV PATH=/glean-demo/bin:$PATH
 ENV LD_LIBRARY_PATH=/usr/local/lib
@@ -54,34 +54,27 @@ RUN apt-get update && apt-get install -y \
     libevent-2.1-7 \
     libxxhash0 \
     libatomic1 \
+    clang-11 libclang-11-dev llvm-11-dev \
+    cmake \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /glean-demo
+# WORKDIR /glean-demo
 
-RUN mkdir /glean-demo/bin
+# RUN mkdir /glean-demo/bin
 
-COPY --from=tools /root/.hsthrift/lib /usr/local/lib
-COPY --from=tools /usr/local/bin/flow /usr/local/bin
-COPY --from=tools /root/.cabal/bin/glean /glean-demo/bin
-COPY --from=tools /root/.cabal/bin/glean-server /glean-demo/bin
-COPY --from=tools /root/.cabal/bin/glean-hyperlink /glean-demo/bin
-COPY --from=tools /glean-code/glean/schema /glean-demo/schema
-COPY --from=tools /react-code /glean-demo/code
-ADD docker_entrypoint.sh docker_entrypoint.sh
+# RUN mkdir -p db /tmp/flow-index-out
 
-RUN mkdir -p db /tmp/flow-index-out
+# RUN flow glean code --output-dir /tmp/flow-index-out --write-root "" && \
+#     glean --db-root db --db-schema dir:schema/source create --repo react/0 && \
+#     glean --db-root db --db-schema dir:schema/source write --repo react/0 /tmp/flow-index-out/* && \
+#     glean --db-root db --db-schema dir:schema/source derive --repo react/0 flow.FileXRef flow.FileDeclaration && \
+#     glean --db-root db --db-schema dir:schema/source finish --repo react/0 && \
+#     rm -Rf /tmp/flow-index-out
 
-RUN flow glean code --output-dir /tmp/flow-index-out --write-root "" && \
-    glean --db-root db --db-schema dir:schema/source create --repo react/0 && \
-    glean --db-root db --db-schema dir:schema/source write --repo react/0 /tmp/flow-index-out/* && \
-    glean --db-root db --db-schema dir:schema/source derive --repo react/0 flow.FileXRef flow.FileDeclaration && \
-    glean --db-root db --db-schema dir:schema/source finish --repo react/0 && \
-    rm -Rf /tmp/flow-index-out
+# ENV REPO_NAME=react
 
-ENV REPO_NAME=react
+# EXPOSE 8888
 
-EXPOSE 8888
-
-ENTRYPOINT ["./docker_entrypoint.sh"]
+# ENTRYPOINT ["./docker_entrypoint.sh"]
 
 # docker run -ti -p8888:8888 ghcr.io/facebookincubator/glean/demo
