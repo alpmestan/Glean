@@ -14,6 +14,7 @@
 #include <chrono>
 #include <memory>
 #include <functional>
+#include <iostream>
 
 #include <folly/Optional.h>
 
@@ -33,24 +34,81 @@ using Logger = facebook::logger::GleanClangIndexerLogger;
 class Logger {
 public:
   Logger() { }
-  Logger& setTask(const std::string& task) { return (*this); }
-  Logger& setRequest(const std::string& task) { return (*this); }
-  Logger& setRepo(const std::string& repo) { return (*this); }
-  Logger& setRevision(const std::string& repo_hash) { return (*this); }
-  Logger& setProcess(const uint32_t& worker_index) { return (*this); }
-  Logger& setCommand(const std::string& name) { return (*this); }
-  Logger& setOrigin(const std::string& origin) { return (*this); }
-  Logger& setSubdir(const std::string& cwd_subdir) { return (*this); }
-  Logger& setTimeElapsedMS(const long& x) { return (*this); }
-  Logger& setTimeElapsed(const std::string& x) { return (*this); }
-  Logger& setSuccess(bool suc) { return (*this); }
-  Logger& setError(const std::string& what) { return (*this); }
-  Logger& setTarget(const std::string& target) { return (*this); }
-  Logger& setPlatform(const folly::Optional<std::string>& platform) { return (*this); }
-  Logger& setFile(const std::string& file) { return (*this); }
-  Logger& setCompileError(bool err) { return (*this); }
-  Logger& setFactBufferSize(bool sz) { return (*this); }
-  Logger& setFactCacheSize(bool sz) { return (*this); }
+  Logger& setTask(const std::string& task) {
+    std::cout << "logger task set to: " << task << std::endl;
+    return (*this);
+  }
+  Logger& setRequest(const std::string& task) {
+    std::cout << "logger request set to: " << task << std::endl;
+    return (*this);
+  }
+  Logger& setRepo(const std::string& repo) {
+    std::cout << "logger repo set to: " << repo << std::endl;
+    return (*this);
+  }
+  Logger& setRevision(const std::string& repo_hash) {
+    std::cout << "logger revision set to: " << repo_hash << std::endl;
+    return (*this);
+  }
+  Logger& setProcess(const uint32_t& worker_index) {
+    std::cout << "logger process set to: " << worker_index << std::endl;
+    return (*this);
+  }
+  Logger& setCommand(const std::string& name) {
+    std::cout << "logger command set to: " << name << std::endl;
+    return (*this);
+  }
+  Logger& setOrigin(const std::string& origin) {
+    std::cout << "logger origin set to: " << origin << std::endl;
+    return (*this);
+  }
+  Logger& setSubdir(const std::string& cwd_subdir) {
+    std::cout << "logger subdir set to: " << cwd_subdir << std::endl;
+    return (*this);
+  }
+  Logger& setTimeElapsedMS(const long& x) {
+    std::cout << "logger elapsed time (ms) set to: " << x << std::endl;
+    return (*this);
+  }
+  Logger& setTimeElapsed(const std::string& x) {
+    std::cout << "logger elapsed time set to: " << x << std::endl;
+    return (*this);
+  }
+  Logger& setSuccess(bool suc) {
+    std::cout << "logger success set to: " << suc << std::endl;
+    return (*this);
+  }
+  Logger& setError(const std::string& what) {
+    std::cout << "logger error set to: " << what << std::endl;
+    return (*this);
+  }
+  Logger& setTarget(const std::string& target) {
+    std::cout << "logger target set to: " << target << std::endl;
+    return (*this);
+  }
+  Logger& setPlatform(const folly::Optional<std::string>& platform) {
+    if(!platform.has_value())
+      std::cout << "logger platform set to Nothing" << std::endl;
+    else
+      std::cout << "logger platform set to: " << platform.value() << std::endl;
+    return (*this);
+  }
+  Logger& setFile(const std::string& file) {
+    std::cout << "logger file set to: " << file << std::endl;
+    return (*this);
+  }
+  Logger& setCompileError(bool err) {
+    std::cout << "logger compile error set to: " << err << std::endl;
+    return (*this);
+  }
+  Logger& setFactBufferSize(bool sz) {
+    std::cout << "logger fact buffer size set to: " << sz << std::endl;
+    return (*this);
+  }
+  Logger& setFactCacheSize(bool sz) {
+    std::cout << "logger fact cache size set to: " << sz << std::endl;
+    return (*this);
+  }
 };
 #endif
 

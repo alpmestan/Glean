@@ -82,19 +82,25 @@ bool ActionLogger::log_index(const SourceFile &source,
                              const FactStats &buf_stats,
                              const CacheStats &cache_stats,
                              std::function<bool()> &&callback) {
+  std::cout << "in log_index" << std::endl;
+  // RESUME HERE!!!!!!!!!!!!!!
   (*logger)
     .setTarget(source.target)
     .setPlatform(source.platform)
     .setFile(source.file);
+  std::cout << "before calling callback" << std::endl;
   bool ok = callback();
+  std::cout << "after calling callback" << std::endl;
   (*logger)
     .setCompileError(!ok)
     .setFactBufferSize(buf_stats.memory)
     .setFactCacheSize(cache_stats.facts.memory);
+  std::cout << "leaving log_index" << std::endl;
   return ok;
 }
 
 void ActionLogger::log(std::function<void()> &&callback) {
+  std::cout << "ActionLogger::log => calling callback" << std::endl;
   callback();
 }
 

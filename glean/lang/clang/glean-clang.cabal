@@ -159,6 +159,8 @@ library
 executable glean-clang-index
     import: fb-cpp
     ghc-options: -no-hs-main
+    -- TODO: instead rely on the appropriate glean component to
+    --       specify the headers needed as 'install-includes'
     include-dirs: ../../../
     main-is: index.cpp
     cxx-sources:
@@ -167,6 +169,8 @@ executable glean-clang-index
         db.cpp,
         path.cpp,
         preprocessor.cpp,
+        -- TODO: instead ship those C++ files into a dedicated glean
+        --       component
         ../../cpp/sender.cpp,
         ../../cpp/glean.cpp,
         ../../interprocess/cpp/worklist.cpp,
@@ -205,3 +209,13 @@ executable glean-clang-index
       cxx-options: -DGLEAN_X86_64 -march=haswell
     if flag(opt)
       cxx-options: -O3
+
+executable glean-clang
+    import: fb-haskell, fb-cpp, deps, exe
+    main-is: Glean/Clang.hs
+    hs-source-dirs: exe
+    other-modules: Glean.CMake
+    ghc-options: -main-is Glean.Clang
+    build-depends:
+        glean-clang,
+        mtl

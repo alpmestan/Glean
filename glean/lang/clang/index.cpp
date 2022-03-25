@@ -184,6 +184,7 @@ struct Config {
 
   Config(int argc, char **argv) {
     assert (argc > 0);
+    std::cout << "#arguments: " << argc << std::endl;
     root = boost::filesystem::canonical(FLAGS_root);
     if (!FLAGS_cwd_subdir.empty()) {
       cwd_subdir = FLAGS_cwd_subdir;
@@ -219,7 +220,7 @@ struct Config {
       #endif
       if (!FLAGS_dump.empty()) {
       // No logging when dumping to a file
-      should_log = false;
+      should_log = true;
       sender = fileWriter(FLAGS_dump);
     } else {
       fail("missing --service or --dump");
@@ -240,7 +241,9 @@ struct Config {
     diagnostics = diagnosticConsumer();
 
     // Add targets from json
+    std::cout << "Inspecting targets..." << std::endl;
     for (int i = 1; i < argc; ++i) {
+      std::cout << "Target: " << argv[i] << std::endl;
       std::string contents;
       if (!folly::readFile(argv[i], contents)) {
         fail(std::string("couldn't read ") + argv[i]);
@@ -273,7 +276,9 @@ struct Config {
       if (!cdb) {
         throw std::runtime_error("couldn't load " + dir + ": " + err);
       }
+      std::cout << "Compilation DB loaded from " << dir << std::endl;
       for(auto file : cdb->getAllFiles()){
+	std::cout << "Compilation DB file: " << file << std::endl;
         sources.push_back(SourceFile{
             FLAGS_cdb_target.c_str(),
             folly::Optional<std::string>(),
@@ -328,6 +333,7 @@ public:
       if (!cdb) {
         throw std::runtime_error("couldn't load " + dir + ": " + err);
       }
+      std::cout << "compilation database loaded (" << dir << ")" << std::endl;
     }
     return cdb.get();
   }
@@ -352,6 +358,7 @@ struct SourceIndexer {
     }
 
   bool index(const SourceFile& source) {
+    std::cout << "indexing " << source.file << "..." << std::endl;
     auto pcdb = cdb.load(source);
     ClangCfg cfg{
       ClangDB::Env{
@@ -586,6 +593,7 @@ int main(int argc, char **argv) {
   const size_t n = FLAGS_stop_after != 0
     ? std::min(size_t(FLAGS_stop_after), config.sources.size())
     : config.sources.size();
+  std::cout << "sources... size_t n = " << n << std::endl;
 
   FactStats prev_stats = {0,0};
   FactStats lifetime_stats = {0,0};
@@ -597,22 +605,23 @@ int main(int argc, char **argv) {
   for (auto next = work_counter->next();
         next.has_value();
         next = work_counter->next()) {
+    std::cout << "main's for loop" << std::endl;
     const auto i = next.value().start;
+    std::cout << "i = " << i << std::endl;
     auto errorGuard = folly::makeGuard([&] {
       LOG_CFG(ERROR,config) << "error guard at "
         << i+1 << "/" << next.value().end << " [" << n << "] "
         << config.sources[i].file;
     });
-
     if (FLAGS_log_every != 0 && (lifetime_files % FLAGS_log_every) == 0) {
-      LOG_CFG(INFO,config)
+      std::cout
         << i+1 << "/" << next.value().end << " [" << n << "] "
-        << config.sources[i].file;
+        << config.sources[i].file << std::endl;
       if (FLAGS_fact_stats) {
-        LOG_CFG(INFO,config)
+	std::cout
           << "fact buffer: " << showStats(indexer.batch.bufferStats())
           << " cache: " << showStats(indexer.batch.cacheStats().facts)
-          << " lifetime: " << showStats(lifetime_stats);
+          << " lifetime: " << showStats(lifetime_stats) << std::endl;
       }
     }
 
@@ -623,6 +632,7 @@ int main(int argc, char **argv) {
       bool ok = config
         .logger("clang/index")
         .log_index(source, buf_stats, cache_stats, [&]() {
+	  std::cout << "about to run indexer on " << source.file << std::endl;
           return indexer.index(source);
         });
       if (!ok && FLAGS_fail_on_error) {
