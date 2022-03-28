@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {-
   Copyright (c) 2013, Benjamin S. Scarlet and Google Inc.
 
@@ -9,8 +8,6 @@
 -}
 
 {-# LANGUAGE CPP, FlexibleInstances, TupleSections #-}
-module Setup (main) where
-
 import Control.Exception (SomeException, try)
 import Control.Monad
 import Data.Char
