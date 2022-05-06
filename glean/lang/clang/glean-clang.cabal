@@ -206,5 +206,9 @@ executable glean-clang
     other-modules: Glean.CMake
     ghc-options: -main-is Glean.Clang
     build-depends:
+        glean:client-hs,
+        glean:client-hs-local,
+        glean:db,
+        glean:util,
         glean-clang,
         mtl

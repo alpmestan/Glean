@@ -1,37 +1,31 @@
 module Glean.Clang where
 
 import Control.Monad.Except
+import Control.Monad.Reader
 import Options.Applicative
 import System.Environment
 
+import qualified Derive       as D
+import qualified Derive.Lib   as D
+import qualified Derive.Types as D
+import Glean.Backend (withBackendWithDefaultOptions)
 import Glean.CMake
+import Glean.Util.ConfigProvider
+import Util.EventBase (withEventBaseDataplane)
 
--- TODO: when the Derive business is integrated,
---       turn this CLI interface into several
---       commands? (index, derive, do both in one shot)
-options :: ParserInfo CppIndexerOpts
+options :: ParserInfo GleanClangOpts
 options = info (helper <*> parser) fullDesc
   where
-    parser :: Parser CppIndexerOpts
-    parser = CppIndexerOpts
+    parser = GleanClangOpts <$> srcOpt <*> indexOpts <*> D.options <*> D.optionsPasses
+    srcOpt =
+      strOption
+      ( long "srcdir"
+     <> help "C++ sources directory, containing the root CMakeLists.txt"
+     <> metavar "DIR"
+      )
+    indexOpts :: Parser CppIndexerOpts
+    indexOpts = CppIndexerOpts
       <$> strOption
-            ( long "srcdir"
-           <> help "C++ sources directory, containing the root CMakeLists.txt"
-           <> metavar "DIR"
-            )
-      <*> strOption
-            ( long "output"
-           <> short 'o'
-           <> help "Path to the file where the indexed data should be dumped"
-           <> metavar "FILE"
-            )
-      <*> strOption
-            ( long "inventory"
-           <> short 'i'
-           <> help "Path to the schema inventory file"
-           <> metavar "FILE"
-            )
-      <*> strOption
             ( long "target"
            <> short 't'
            <> help "CMake target to index from the project given by --srcdir"
@@ -46,10 +40,16 @@ options = info (helper <*> parser) fullDesc
             )
 
 main :: IO ()
-main = execParser options >>= go
+main = withConfigOptions options $ \(opts, cfgOpts) ->
+  D.withNumCapabilities (D.cfgNumCapabilities $ deriverOpts opts) $
+  withEventBaseDataplane $ \evb ->
+  withConfigProvider cfgOpts $ \cfgAPI ->
+  withBackendWithDefaultOptions evb cfgAPI (D.cfgService $ deriverOpts opts) $ \be ->
+  do go opts be -- run indexer and write its data to glean DB
+     D.runDerive (deriverOpts opts) (deriverPasses opts) be -- run deriving passes
 
-  where go opts = do
-          r <- runExceptT (indexCMake opts)
+  where go opts be = do
+          r <-  runExceptT (flip runReaderT opts $ indexCMake be)
           case r of
-            Left e  -> error $ "Indexing error: " ++ show e
-            Right _ -> putStrLn "Indexing OK."
+            Left e  -> error $ "glean-clang error: " ++ show e
+            Right _ -> putStrLn "OK"
