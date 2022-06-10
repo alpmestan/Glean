@@ -6,9 +6,11 @@
   LICENSE file in the root directory of this source tree.
 -}
 {-# LANGUAGE ApplicativeDo #-}
-module Glean.Indexer.Cpp ( indexer ) where
+module Glean.Indexer.Cpp
+  ( indexerWith, indexer, indexerNoDeriv, Clang(..) ) where
 
 import Control.Concurrent.Async
+import Control.Monad
 import Data.Proxy
 import Options.Applicative
 import System.Directory
@@ -57,8 +59,17 @@ options = do
     help "Enable verbose logging from subprocesses"
   return Clang{..}
 
+-- | Standard indexer, that also runs the deriver
 indexer :: Indexer Clang
-indexer = Indexer {
+indexer = indexerWith True
+
+indexerNoDeriv :: Indexer Clang
+indexerNoDeriv = indexerWith False
+
+-- | C++ indexer. The 'Bool' specifies whether the indexer
+--   also runs the deriver.
+indexerWith :: Bool -> Indexer Clang
+indexerWith deriveToo = Indexer {
   indexerShortName = "cpp",
   indexerDescription = "Index C++ code (through Clang)",
   indexerOptParser = options,
@@ -76,7 +87,8 @@ indexer = Indexer {
     writeToDB backend repo indexerData
 
     -- deriving
-    derive clangVerbose clangDeriveBin backend repo
+    when deriveToo $
+      derive clangVerbose clangDeriveBin backend repo
   }
 
   where generateInventory backend repo outFile =

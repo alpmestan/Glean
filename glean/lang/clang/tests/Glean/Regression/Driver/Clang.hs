@@ -8,8 +8,13 @@
 
 module Glean.Regression.Driver.Clang (main) where
 
+import System.Environment (withArgs)
+
 import qualified Glean.Clang.Test as Clang
 import Glean.Regression.Snapshot
 
 main :: IO ()
-main = testMain Clang.driver
+main = withArgs ["--root", path] $
+    testMain Clang.driver
+  where
+    path = "glean/lang/clang/tests"
