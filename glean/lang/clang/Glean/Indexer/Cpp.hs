@@ -40,7 +40,7 @@ data Clang = Clang
   , clangDeriveBin    :: Maybe FilePath -- ^ path to @clang-derive@ binary
   , clangCompileDBDir :: Maybe FilePath -- ^ (optional) path to pre-existing @compile_commands.json@
   , clangVerbose      :: Bool -- ^ display debugging information
-  }
+  } deriving Show
 
 options :: Parser Clang
 options = do
