@@ -6,7 +6,7 @@
   LICENSE file in the root directory of this source tree.
 -}
 
-{-# LANGUAGE TypeApplications, ConstraintKinds, UndecidableInstances #-}
+{-# LANGUAGE CPP, TypeApplications, ConstraintKinds, UndecidableInstances #-}
 
 module Glean.Util.ShellPrint
   ( DbVerbosity(..)
@@ -29,6 +29,9 @@ import Control.Monad
 import Data.Aeson
 import qualified Data.Aeson as J
 import qualified Data.Aeson.Encode.Pretty as J
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key as Key
+#endif
 import qualified Data.ByteString.Lazy.Char8 as BS
 import Data.Char
 import Data.Int
@@ -344,7 +347,11 @@ instance (ShellFormat DbVerbosity v)
         jsonMaybeTime = maybe J.Null jsonTime
         jsonTime (Thrift.PosixEpochTime t) =
           J.toJSON $ posixSecondsToUTCTime (fromIntegral t)
+#if MIN_VERSION_aeson(2,0,0)
+        jsonKeyFrom s = Key.fromText . Text.pack $ map f s
+#else
         jsonKeyFrom s = Text.pack $ map f s
+#endif
           where
             f ' ' = '_'
             f c = toLower c

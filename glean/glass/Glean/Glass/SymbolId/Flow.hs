@@ -131,14 +131,14 @@ moduleStringNameByFile (GleanPath path) =
 instance ToQName Flow.Entity where
   toQName e = case e of
     Flow.Entity_decl x -> toQName x
-    Flow.Entity_module_ x -> Glean.keyOf x >>= toQName
+    Flow.Entity_module_ x -> Glean.keyOf x >>= \a -> toQName a
     Flow.Entity_EMPTY -> return $ Left "unknown Entity"
 
 instance ToQName Flow.SomeDeclaration where
   toQName e = case e of
-    Flow.SomeDeclaration_localDecl x -> Glean.keyOf x >>= toQName
-    Flow.SomeDeclaration_memberDecl x -> Glean.keyOf x >>= toQName
-    Flow.SomeDeclaration_typeDecl x -> Glean.keyOf x >>= toQName
+    Flow.SomeDeclaration_localDecl x -> Glean.keyOf x >>= \a -> toQName a
+    Flow.SomeDeclaration_memberDecl x -> Glean.keyOf x >>= \a -> toQName a
+    Flow.SomeDeclaration_typeDecl x -> Glean.keyOf x >>= \a -> toQName a
     Flow.SomeDeclaration_EMPTY -> return $ Left "unknown SomeDeclaration"
 
 instance ToQName Flow.Declaration_key where

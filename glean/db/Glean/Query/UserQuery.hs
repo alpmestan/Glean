@@ -6,6 +6,7 @@
   LICENSE file in the root directory of this source tree.
 -}
 
+{-# LANGUAGE CPP #-}
 module Glean.Query.UserQuery
   ( userQueryFacts
   , userQuery
@@ -19,6 +20,10 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Except
 import qualified Data.Aeson as Aeson
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KeyMap
+#endif
 import Data.Bifunctor (first, bimap)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -988,7 +993,7 @@ compileAngleQuery ver dbSchema mode source stored = do
   parsed <- checkBadQuery Text.pack $ Angle.parseQuery source
   vlog 2 $ "parsed query: " <> show (pretty parsed)
 
-  let scope = addTmpPredicate $ fromMaybe HashMap.empty $
+  let scope = addTmpPredicate $ fromMaybe mempty $
         schemaNameEnv dbSchema ver
 
   resolved <- checkBadQuery id $ runExcept $
@@ -1173,7 +1178,7 @@ parseQuery dbSchema Thrift.UserQueryOptions{..} details val =
       badQuery = queryError (PredicateTy (PidRef predicatePid predicateId)) val
     case val of
       Aeson.Object obj -> do
-        case sortOn fst $ HashMap.toList obj of
+        case sortOn fst $ mapToList obj of
           -- { } means "fetch the fact" (only if the user wrote JSON directly)
           [] -> return (MatchTerm (NestedPred details Nothing Nothing))
           -- { "get" = { } } means "fetch the fact"
@@ -1225,7 +1230,7 @@ parseQuery dbSchema Thrift.UserQueryOptions{..} details val =
       return (RTS.Byte i)
     (StringTy, Aeson.String s) -> return $ RTS.String $ Text.encodeUtf8 s
     (StringTy, Aeson.Object obj)
-      | [("prefix", Aeson.String s)] <- HashMap.toList obj ->
+      | [("prefix", Aeson.String s)] <- mapToList obj ->
          return (Ref (PrefixWildcard (Text.encodeUtf8 s)))
     (ArrayTy ByteTy, Aeson.String s)
       | userQueryOptions_no_base64_binary ->
@@ -1233,19 +1238,19 @@ parseQuery dbSchema Thrift.UserQueryOptions{..} details val =
       | otherwise ->
         return (ByteArray (decodeBase64 (Text.encodeUtf8 s)))
     (ArrayTy ty, Aeson.Object obj)
-      | Just val <- HashMap.lookup "every" obj -> do
+      | Just val <- mapLookup "every" obj -> do
         query <- jsonToValMatch ty val
         if refutableNested query
           then throwError "array query with \"every\" must be irrefutable"
           else return (Ref (MatchTerm (NestedArray query)))
-      | Just (Aeson.Array vec) <- HashMap.lookup "exact" obj ->
+      | Just (Aeson.Array vec) <- mapLookup "exact" obj ->
         RTS.Array <$> mapM (jsonToValMatch ty) (Vector.toList vec)
     (RecordTy fields, Aeson.Object obj)
       -- ensure that all the fields mentioned in the query are valid
-      | all (`elem` map fieldDefName fields) (HashMap.keys obj) -> do
+      | all (`elem` map fieldDefName fields) (mapKeys obj) -> do
       let
         doField (Angle.FieldDef name ty)
-          | Just val <- HashMap.lookup name obj =
+          | Just val <- mapLookup name obj =
             jsonToValMatch ty val
         doField _ = return (Ref Wildcard) -- missing field is a wildcard
       Tuple <$> mapM doField fields
@@ -1320,7 +1325,7 @@ parseQuery dbSchema Thrift.UserQueryOptions{..} details val =
   matchSum fields obj
     -- when "any":True, we ignore unknown fields, to allow
     -- backwards-compatible queries.
-    | Just (Aeson.Bool True) <-  HashMap.lookup "any" obj = do
+    | Just (Aeson.Bool True) <-  mapLookup "any" obj = do
       alts <- parseAlts
       if any (any refutableNested) alts
         then
@@ -1339,12 +1344,12 @@ parseQuery dbSchema Thrift.UserQueryOptions{..} details val =
           return $ Ref $ MatchTerm $ NestedSum SumMatchAny alts
 
     -- when "any":False, all fields must be present in the schema
-    | all (`elem` ("any" : map fieldDefName fields)) (HashMap.keys obj) = do
+    | all (`elem` ("any" : map fieldDefName fields)) (mapKeys obj) = do
       RTS.Ref . MatchTerm . NestedSum SumMatchThese <$> parseAlts
     | otherwise = queryError (SumTy fields) (Aeson.Object obj)
     where
     parseAlts = forM fields $ \(Angle.FieldDef name ty) ->
-      case HashMap.lookup name obj of
+      case mapLookup name obj of
         Just val -> Just <$> jsonToValMatch ty val
         Nothing -> return Nothing
 
@@ -1415,7 +1420,7 @@ toResolvedType = bimap toPredRef toTypeRef
 compileType :: DbSchema -> SchemaSelector -> ByteString -> IO Type
 compileType schema version src = do
   parsed <- checkParsed $ Angle.parseType src
-  let scope = addTmpPredicate $ fromMaybe HashMap.empty $
+  let scope = addTmpPredicate $ fromMaybe mempty $
         schemaNameEnv schema version
   resolved <- checkResolved $ runResolve latestAngleVersion scope $
     resolveType parsed
@@ -1428,3 +1433,14 @@ compileType schema version src = do
     badQuery :: Text -> IO a
     badQuery err = throwIO $ Thrift.BadQuery $ Text.unlines
       ["unable to compile type: ", err, "type was: ", Text.decodeUtf8 src]
+
+
+#if MIN_VERSION_aeson(2,0,0)
+mapLookup k = KeyMap.lookup (Key.fromText k)
+mapToList = KeyMap.toList
+mapKeys   = map Key.toText . KeyMap.keys
+#else
+mapLookup = HashMap.lookup
+mapToList = HashMap.toList
+mapKeys   = HashMap.keys
+#endif

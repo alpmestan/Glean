@@ -89,7 +89,7 @@ searchRelatedEntities
   -> RepoName
   -> RepoHaxl u w [RelatedLocatedEntities]
 searchRelatedEntities limit recurse dir rel entity repo =
-  toSymbolIds repo =<<
+  (\a -> toSymbolIds repo a) =<<
     searchRelation limit limit recurse rel dir [entity] HashSet.empty
 
 -- | Lift entity search results into pairs of entities that we found,

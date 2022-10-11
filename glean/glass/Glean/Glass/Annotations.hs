@@ -44,7 +44,8 @@ max_annotations_limit = 10
 getAnnotationsForEntity
   :: Glass.RepoName -> Code.Entity
   -> Glean.RepoHaxl u w (Either Text (Maybe [Glass.Annotation]))
-getAnnotationsForEntity repo entity = fetch repo `mapM` entityToAngle entity
+getAnnotationsForEntity repo entity =
+  mapM (\a -> fetch repo a) (entityToAngle entity)
 
 -- Get all the annotations for a given entity. This may include
 -- computing symbolId for these annotations.
@@ -56,7 +57,7 @@ fetch repo ent = do
   entityToAnnotations <- queryAnnotations ent
   let annotations = Code.entityToAnnotations_key_annotations <$>
         catMaybes (Code.entityToAnnotations_key <$> entityToAnnotations)
-  annotationsSyms <- forM annotations (annotationsToSymbols repo)
+  annotationsSyms <- forM annotations (\a -> annotationsToSymbols repo a)
   return $ getAnnotations annotationsSyms
 
 queryAnnotations
@@ -81,7 +82,7 @@ annotationsToSymbols
 annotationsToSymbols repo annotations = case annotations of
   Code.Annotations_hack (Hack.Annotations_attributes attrs) -> do
     attributeToDecl <- queryAttributeToDecl attrs
-    decls <- forM attributeToDecl (declarationsToSymbolId repo)
+    decls <- forM attributeToDecl (\x -> declarationsToSymbolId repo x)
     let mapAnnotSym = Map.fromList decls
         syms = (`Map.lookup` mapAnnotSym) <$> attrs
     return $ AnnotationsSymbolId (annotations, syms)

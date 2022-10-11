@@ -179,7 +179,7 @@ outputShellPrint x = do
 newtype Repl a = Repl
   { unRepl :: Haskeline.InputT Eval a
   }
-  deriving (Functor, Applicative, Monad, Haskeline.MonadException, MonadIO)
+  deriving (Functor, Applicative, Monad, MonadIO, C.MonadCatch, C.MonadThrow, C.MonadMask)
 
 repoString :: Thrift.Repo -> String
 repoString repo = concat
@@ -1099,7 +1099,7 @@ getInputLines = Repl $ getLines prompt1 []
 
     getLines prompt prior = do
       maybeLine <-
-        Haskeline.handle (\(e::IOError) -> do
+        C.handle (\(e::IOError) -> do
           liftIO $ hPrint stderr e
           return Nothing) $
           Haskeline.getInputLine =<< prompt
@@ -1139,17 +1139,10 @@ repl = replMask $ \restore ->
   loop
 
 replTry :: Exception e => Repl a -> Repl (Either e a)
-replTry r = Haskeline.controlIO $ \(Haskeline.RunIO run) -> do
-  result <- try (run r)
-  case result of
-    Left e -> return (return (Left e))
-    Right r -> return (Right <$> r)
+replTry = C.try
 
 replMask :: ((Repl a -> Repl a) -> Repl b) -> Repl b
-replMask f = Haskeline.controlIO $ \(Haskeline.RunIO run) -> do
-  mask $ \restore ->
-    run (f (\repl -> Haskeline.controlIO $ \(Haskeline.RunIO run') ->
-                restore (run' repl)))
+replMask f = C.mask $ \restore -> f restore
 
 -- | Temporarily install standard signal handlers for catching ^C, which just
 -- throw an exception in the current thread.
@@ -1178,7 +1171,7 @@ withSignalHandlers act = do
       _ <- installHandler sigINT   hdlINT  Nothing
       return ()
 
-  Haskeline.bracket installHandlers uninstallHandlers (const act)
+  C.bracket installHandlers uninstallHandlers (const act)
 
 completeDatabases :: Haskeline.CompletionFunc Eval
 completeDatabases =

@@ -149,7 +149,9 @@ newtype Eval a = Eval
     ( Functor
     , Applicative
     , Monad
+#if !MIN_VERSION_haskeline(0,8,0)
     , Haskeline.MonadException
+#endif
     , MonadIO
     , C.MonadCatch
     , C.MonadMask

@@ -531,8 +531,9 @@ searchSymbol env@Glass.Env{..} req@SymbolSearchRequest{..} RequestOptions{..} =
       Just names -> withGleanDBs "searchSymbol" env req names $
         \gleanDBs scmRevs -> do
           res <- backendRunHaxl GleanBackend{..} $ Glean.queryAllRepos $ do
-            res <- mapM (runSearch querySpec
-                          repo scmRevs mlimitInner terse sString) searchQs
+            res <- mapM (\q -> runSearch querySpec
+                                 repo scmRevs mlimitInner terse sString q)
+                        searchQs
             return (nubOrd (concat res)) -- remove latter duplicates in n*log n
           pure (res, Nothing)
 
@@ -576,7 +577,7 @@ runSearch querySpec repo scmRevs mlimit terse sString (Query.Search query) = do
           syms <- searchWithTimeLimit mlimit queryTimeLimit
                    (searchFn sCase parentNames)
           return (baseEntity, syms)
-  mapM (processSymbolResult terse sString repo scmRevs ctx) names
+  mapM (\n -> processSymbolResult terse sString repo scmRevs ctx n) names
   where
     queryTimeLimit = 5000 -- milliseconds, make this a flag?
 
@@ -1003,9 +1004,9 @@ fetchDocumentSymbols (FileReference scsrepo path) mlimit includeRefs b mlang =
 
       -- mark up symbols into normal format with static attributes
       refs1 <- withRepo fileRepo $
-        mapM (toReferenceSymbol scsrepo srcFile offsets) xrefs
+        mapM (\x -> toReferenceSymbol scsrepo srcFile offsets x) xrefs
       defs1 <- withRepo fileRepo $
-        mapM (toDefinitionSymbol scsrepo srcFile offsets) defns
+        mapM (\d -> toDefinitionSymbol scsrepo srcFile offsets d) defns
 
       let (refs, defs) = Attributes.extendAttributes
             (Attributes.fromSymbolId Attributes.SymbolKindAttr)
@@ -1190,8 +1191,8 @@ toReferenceSymbol repoName file srcOffsets (Code.XRefLocation {..}, entity) = do
 
   target <- rangeSpanToLocationRange repoName location_file
     location_location
-  targetNameRange <- forM location_span
-    (memoRangeSpanToRange location_file . Code.RangeSpan_span)
+  targetNameRange <- forM location_span $ \s ->
+    memoRangeSpanToRange location_file (Code.RangeSpan_span s)
 
   return $ (entity,) $
     ReferenceRangeSymbolX sym range target attributes targetNameRange

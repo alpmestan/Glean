@@ -68,11 +68,11 @@ type QueryType q =
 -- No more than 1 result will be returned from the server.
 --
 fetchData :: (QueryType a) => Angle a -> RepoHaxl u w (Maybe a)
-fetchData = getFirstResult . query
+fetchData a = getFirstResult (query a)
 
 -- | Fetch exactly 0 or 1 results, recusively
 fetchDataRecursive :: (QueryType a) => Angle a -> RepoHaxl u w (Maybe a)
-fetchDataRecursive = getFirstResult . recursive . query
+fetchDataRecursive a = getFirstResult $ recursive (query a)
 
 -- | Run a non-recursive data query with optional limit on search results.
 -- Without an explicit limit the global limits apply.
@@ -86,8 +86,8 @@ searchWithLimit mlimit = searchWithTimeLimit mlimit
 -- Time budget in milliseconds
 searchWithTimeLimit
   :: QueryType q => Maybe Int -> Int -> Angle q -> RepoHaxl u w [q]
-searchWithTimeLimit mlimit time =
-    fmap fst <$> search . limitTime time . limit item . Angle.query
+searchWithTimeLimit mlimit time a =
+    fmap fst . search . limitTime time . limit item $ Angle.query a
   where
     item = fromMaybe (fromIntegral mAXIMUM_SYMBOLS_QUERY_LIMIT) mlimit
 
@@ -100,8 +100,8 @@ searchPredicateWithLimit = searchWithLimit
 -- If not limit set, MAXIMUM_SYMBOLS_QUERY_LIMIT is enforced
 searchRecursiveWithLimit
   :: QueryType q => Maybe Int -> Angle q -> RepoHaxl u w [q]
-searchRecursiveWithLimit mlimit =
-    fmap fst <$> search . recursive . limitTime time . limit item . Angle.query
+searchRecursiveWithLimit mlimit a =
+    fmap fst . search . recursive . limitTime time . limit item $ Angle.query a
   where
     item = fromMaybe (fromIntegral mAXIMUM_SYMBOLS_QUERY_LIMIT) mlimit
     time = fromIntegral mAXIMUM_QUERY_TIME_LIMIT
@@ -116,7 +116,7 @@ searchReposWithLimit
 searchReposWithLimit limit angle act = do
   results <- Glean.queryAllRepos $ do
     res <- searchWithLimit limit angle
-    mapM act res -- we would like this to be concurrent
+    mapM (\x -> act x) res -- we would like this to be concurrent
   return $ maybe id take limit results
 
 -- | Split a filepath into a list of directory components

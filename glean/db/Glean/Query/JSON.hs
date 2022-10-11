@@ -42,6 +42,10 @@ import Data.Word (Word8, Word64)
 import Foreign.Marshal.Utils (copyBytes)
 import Safe (atMay)
 
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key as Key
+#endif
+
 import Thrift.Protocol.JSON.Base64
 import Util.Buffer (ascii, liftST)
 import qualified Util.Buffer as Buffer
@@ -271,7 +275,7 @@ encode expanded Encoder{..} !d = enc
 
 jsonEncoder :: Bool -> Encoder
 jsonEncoder no_base64 = Encoder
-  { encByte = number . fromIntegral
+  { encByte = \w -> number (fromIntegral w)
   , encNat = number
   , encBool = \b -> if b
       then do
@@ -349,9 +353,9 @@ thriftType typ =
 
 compactEncoder :: Encoder
 compactEncoder = Encoder
-  { encByte = Buffer.byte
-  , encNat = Thrift.encodeZigZag . fromIntegral
-  , encBool = Buffer.byte . bool
+  { encByte = \x -> Buffer.byte x
+  , encNat = \n -> Thrift.encodeZigZag (fromIntegral n)
+  , encBool = \b -> Buffer.byte (bool b)
   , encMangledString = \ref n -> do
       -- length
       Thrift.encodeVarint (fromIntegral n)
@@ -425,7 +429,11 @@ instance Show OrderedValue where
 
 instance Aeson.ToJSON OrderedValue where
   toJSON (OrderedObject fields) =
+#if MIN_VERSION_aeson(2,0,0)
+    Aeson.object [ (Key.fromText f, toJSON v) | (f,v) <- fields ]
+#else
     Aeson.object [ (f, toJSON v) | (f,v) <- fields ]
+#endif
   toJSON (OrderedArray arr) = Aeson.Array (Vector.map toJSON arr)
   toJSON (OrderedValue val) = toJSON val
 

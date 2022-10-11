@@ -26,8 +26,8 @@ import System.Process
 withPager :: (MVar Handle -> IO a) -> IO (Maybe a)
 withPager action = mask $ \restore -> do
   handle_var <- newEmptyMVar
-  withAsyncWithUnmask (act handle_var) $ \async_action ->
-    withAsyncWithUnmask (pager handle_var) $ \async_pager ->
+  withAsyncWithUnmask (\a -> act handle_var a) $ \async_action ->
+    withAsyncWithUnmask (\a -> pager handle_var a) $ \async_pager ->
       restore $ do
         r <- waitEitherCatch async_action async_pager
         case r of

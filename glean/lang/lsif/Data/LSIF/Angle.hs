@@ -334,7 +334,7 @@ partitionByType ids = do
   return $ IdSet defIds declIds refIds fileIds
 
 emitFileFacts :: Id_ FileTy -> [IdVector] -> Parse [Predicate]
-emitFileFacts fileId = concatMapM (emitFileFacts_ fileId)
+emitFileFacts fileId xs = concatMapM (\v -> emitFileFacts_ fileId v) xs
 
 -- We delay this until the post-processing phase to ensure all
 -- - item, textDocument/definition, etc.. nodes are added
@@ -368,7 +368,7 @@ emitProjects projId ids
 emitSymbolKinds :: Id -> IdVector -> Parse (Maybe Predicate)
 emitSymbolKinds fileId ids = do
   factBodies <- catMaybes <$>
-    mapM (generateSymbolKindFacts fileId . Id) (U.toList ids)
+    mapM (\i -> generateSymbolKindFacts fileId (Id i)) (U.toList ids)
   if null factBodies
     then pure Nothing
     else return $ Just $ Predicate "lsif.DefinitionKind" factBodies
@@ -376,7 +376,7 @@ emitSymbolKinds fileId ids = do
 emitMonikers :: Id -> IdVector -> Parse (Maybe Predicate)
 emitMonikers fileId ids = do
   factBodies <- catMaybes <$>
-    mapM (generateMonikerFacts fileId . Id) (U.toList ids)
+    mapM (\i -> generateMonikerFacts fileId (Id i)) (U.toList ids)
   if null factBodies
     then pure Nothing
     else return $ Just $ Predicate "lsif.DefinitionMoniker" factBodies
@@ -384,7 +384,7 @@ emitMonikers fileId ids = do
 emitHovers :: Id -> IdVector -> Parse (Maybe Predicate)
 emitHovers fileId ids = do
   hoverBodies <- catMaybes <$>
-    mapM (generateHoverFacts fileId . Id) (U.toList ids)
+    mapM (\i -> generateHoverFacts fileId (Id i)) (U.toList ids)
   if null hoverBodies
     then pure Nothing
     else return $ Just $ Predicate "lsif.DefinitionHover" hoverBodies
@@ -392,7 +392,7 @@ emitHovers fileId ids = do
 emitReferences :: Id -> IdVector -> Parse (Maybe Predicate)
 emitReferences fileId ids = do
   xrefBodies <- concat <$> mapM
-    (generateFileReferences fileId . Id) (U.toList ids)
+    (\i -> generateFileReferences fileId (Id i)) (U.toList ids)
   if null xrefBodies
     then pure Nothing
     else return $ Just $
@@ -402,7 +402,7 @@ emitReferences fileId ids = do
 emitTargetUses :: Id -> IdVector -> Parse (Maybe Predicate)
 emitTargetUses fileId ids = do
   useBodies <- concat <$>
-    mapM (generateTargetUses fileId . Id) (U.toList ids)
+    mapM (\i -> generateTargetUses fileId (Id i)) (U.toList ids)
   if null useBodies
     then pure Nothing
     else return $ Just $
@@ -474,7 +474,7 @@ generateHoverFacts fileId defRangeId =
 -- monikers, so they will still be useful in entity lookups as keys
 generateMonikerFacts :: Id -> Id -> Parse (Maybe Value)
 generateMonikerFacts fileId defRangeId = do
-  mId <- withResultSet defRangeId getMonikerId (pure . Just)
+  mId <- withResultSet defRangeId getMonikerId (\x -> pure (Just x))
   pure $ pure $ object $ pure $ key $
     [ "defn" .= (object . pure . key)
         [ "file" .= fileId
