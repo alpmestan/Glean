@@ -56,7 +56,7 @@ instance ToQName CodeErlang.Entity where
 
 instance ToQName Erlang.Declaration where
   toQName e = case e of
-    Erlang.Declaration_func x -> Glean.keyOf x >>= toQName
+    Erlang.Declaration_func x -> Glean.keyOf x >>= \a -> toQName a
     Erlang.Declaration_EMPTY -> return $ Left "unknown Declaration"
 
 instance ToQName Erlang.FunctionDeclaration_key where

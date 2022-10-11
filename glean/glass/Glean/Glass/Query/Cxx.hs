@@ -93,7 +93,7 @@ documentSymbolsForCxx mlimit includeRefs fileId = do
 getFirstFileTrace
   :: Glean.IdOf Src.File
   -> Glean.RepoHaxl u w (Maybe (Glean.IdOf Cxx.Trace))
-getFirstFileTrace = fetchFactIdOnly . cxxFileTrace
+getFirstFileTrace a = fetchFactIdOnly (cxxFileTrace a)
 
 -- | Get first file xrefs set, and keep the fact id around
 -- > cxx1.FileXRefs { xmap = { file = "fbcode/admarket/lib/stringdb/StringDB.h"
@@ -101,7 +101,7 @@ getFirstFileTrace = fetchFactIdOnly . cxxFileTrace
 getFirstFileXRefs
   :: Glean.IdOf Src.File
   -> Glean.RepoHaxl u w (Maybe (Glean.IdOf Cxx.FileXRefs))
-getFirstFileXRefs = fetchFactIdOnly . cxxFileXRefs
+getFirstFileXRefs a = fetchFactIdOnly (cxxFileXRefs a)
 
 --
 -- | Find the cxx and pp entities associated with a file, using
@@ -156,7 +156,7 @@ externalXRefs mlimit xrefId = do
   case maybeRawXRefs of
     Nothing -> return []
     Just (sources, targets) -> do
-      locations <- mapM (cxxXRefTargetToLocation declLocMap) targets
+      locations <- mapM (\t -> cxxXRefTargetToLocation declLocMap t) targets
       let ranges = relativeByteSpansToRanges sources
       let declXRefs = zipXRefSourceAndTargets ranges locations
       let defnXRefs = zipXRefSourcesAndDefinitions declToDefMap ranges locations
@@ -211,7 +211,7 @@ type DeclToDefMap = Map Cxx.Declaration (Code.Entity, Code.Location)
 variableXRefs
   :: Glean.IdOf Cxx.FileXRefs
   -> Glean.RepoHaxl u w (Maybe ([Src.ByteSpans], [Cxx.XRefTarget]))
-variableXRefs = fetchDataRecursive . cxxFileEntityXMapVariableXRefLocations
+variableXRefs a = fetchDataRecursive (cxxFileEntityXMapVariableXRefLocations a)
 
 -- | Build lookup table of definitions found from declToDef calls
 -- on the exteranl xrefs in the file

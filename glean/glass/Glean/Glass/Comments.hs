@@ -45,7 +45,7 @@ getEntityDocumentation
   -> Glean.RepoHaxl u w [Glass.LocationRange]
 getEntityDocumentation repo entity = do
   res <- searchRecursiveWithLimit (Just mAX_COMMENTS) $ getDocumentation entity
-  mapM (uncurry (mkLocationRange repo)) res
+  mapM (\r -> uncurry (\a b -> mkLocationRange repo a b) r) res
 
 -- | Docs are always bytespans at the moment. Convert them out.
 mkLocationRange

@@ -90,7 +90,7 @@ instance Symbol Cxx.EnumDefinition_key where
     toSymbolPredicate decl
 
 instance Symbol Cxx.ObjcMethodDeclaration where
-  toSymbol decl = Glean.keyOf decl >>= toSymbol
+  toSymbol decl = Glean.keyOf decl >>= \x -> toSymbol x
 
 instance Symbol Cxx.NamespaceDefinition_key where
   toSymbol (Cxx.NamespaceDefinition_key decl _members) =
@@ -232,39 +232,39 @@ instance ToSymbolParent Cxx.Entity where
   toSymbolParent e = case e of
     Cxx.Entity_decl x -> toSymbolParent x
     Cxx.Entity_defn{} -> return Nothing
-    Cxx.Entity_enumerator x -> Glean.keyOf x >>= toSymbolParent
+    Cxx.Entity_enumerator x -> Glean.keyOf x >>= \a -> toSymbolParent a
     Cxx.Entity_EMPTY -> return Nothing
 
 instance ToSymbolParent Cxx.Declaration where
   toSymbolParent e = case e of
-    Cxx.Declaration_namespace_ x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_usingDeclaration x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_usingDirective x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_record_ x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_enum_ x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_function_ x -> Glean.keyOf x >>= toSymbolParent
-    Cxx.Declaration_variable x-> Glean.keyOf x  >>= toSymbolParent
+    Cxx.Declaration_namespace_ x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_usingDeclaration x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_usingDirective x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_record_ x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_enum_ x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_function_ x -> Glean.keyOf x >>= \a -> toSymbolParent a
+    Cxx.Declaration_variable x-> Glean.keyOf x  >>= \a -> toSymbolParent a
     Cxx.Declaration_objcContainer{} -> return Nothing -- TODO
     Cxx.Declaration_objcMethod{} -> return Nothing -- TODO
     Cxx.Declaration_objcProperty{} -> return Nothing -- TODO
-    Cxx.Declaration_typeAlias x -> Glean.keyOf x >>= toSymbolParent
+    Cxx.Declaration_typeAlias x -> Glean.keyOf x >>= \a -> toSymbolParent a
     Cxx.Declaration_EMPTY -> return Nothing
 
 instance ToSymbolParent Cxx.Enumerator_key where
   toSymbolParent (Cxx.Enumerator_key _name decl _) =
-    Glean.keyOf decl >>= cxxEnumDeclParentName
+    Glean.keyOf decl >>= \a -> cxxEnumDeclParentName a
 
 instance ToSymbolParent Cxx.NamespaceDeclaration_key where
   toSymbolParent (Cxx.NamespaceDeclaration_key qname _) =
-    Glean.keyOf qname >>= toSymbolParent
+    Glean.keyOf qname >>= \a -> toSymbolParent a
 
 instance ToSymbolParent Cxx.UsingDeclaration_key where
   toSymbolParent (Cxx.UsingDeclaration_key qname _) =
-    Glean.keyOf qname >>= toSymbolParent
+    Glean.keyOf qname >>= \a -> toSymbolParent a
 
 instance ToSymbolParent Cxx.UsingDirective_key where
   toSymbolParent (Cxx.UsingDirective_key qname _) =
-    Glean.keyOf qname >>= toSymbolParent
+    Glean.keyOf qname >>= \a -> toSymbolParent a
 
 instance ToSymbolParent Cxx.QName_key where
   toSymbolParent (Cxx.QName_key _name scope) = cxxScopeName scope
@@ -289,7 +289,7 @@ instance ToSymbolParent Cxx.EnumDeclaration_key where
 
 instance ToSymbolParent Cxx.FunctionDeclaration_key where
   toSymbolParent (Cxx.FunctionDeclaration_key fqname _sig _todo _) =
-    Glean.keyOf fqname >>= toSymbolParent
+    Glean.keyOf fqname >>= \a -> toSymbolParent a
 
 instance ToSymbolParent Cxx.VariableDeclaration_key where
   toSymbolParent (Cxx.VariableDeclaration_key qname _ty _kind _) =

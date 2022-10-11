@@ -15,8 +15,17 @@ packages:
 
 tests: True
 
--- necessary to use a haskeline <0.8 with GHCs that ship with base >= 4.14
-allow-newer: haskeline:base
+allow-newer:
+ haskeline:base,
+ glean:ghc-prim,
+ vector-fftw:base,
 
--- https://github.com/TomMD/entropy/issues/75
-constraints: entropy < 0.4.1.9
+constraints:
+   -- https://github.com/TomMD/entropy/issues/75
+   entropy < 0.4.1.9,
+   -- we need
+   -- https://github.com/facebook/Haxl/commit/115b3be9f43fc14a0f4b30c437b0dc5ab8a7b472
+   -- first released in 2.4.0.0, to support GHC 9.0
+   haxl >= 2.4,
+   -- first release to support GHC 9.0/base 4.15
+   haskeline >= 0.8.1

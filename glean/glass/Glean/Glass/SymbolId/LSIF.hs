@@ -36,7 +36,7 @@ instance Symbol Lsif.DefinitionMoniker_key where
     Lsif.Moniker_key kind _scheme ident <- Glean.keyOf moniker
     case kind of
       -- case 1: locals. case a) no id, just position or b) id + pos
-      Lsif.MonikerKind_Local -> Glean.keyOf defn >>= localsIdent
+      Lsif.MonikerKind_Local -> Glean.keyOf defn >>= \a -> localsIdent a
 
       -- case 2: non-locals w/ monikers
       _ -> do -- use the "lsif" tag to indicate symbol is a moniker only
@@ -96,13 +96,13 @@ showSpan Lsif.RangeSpan{..} = map textShow
 
 instance ToQName Lsif.SomeEntity where
   toQName e = case e of
-    Lsif.SomeEntity_defn defn -> Glean.keyOf defn >>= toQName
-    Lsif.SomeEntity_decl decl -> Glean.keyOf decl >>= toQName
+    Lsif.SomeEntity_defn defn -> Glean.keyOf defn >>= \a -> toQName a
+    Lsif.SomeEntity_decl decl -> Glean.keyOf decl >>= \a -> toQName a
     _ -> throwM $ SymbolError "Unknown LSIF case"
 
 instance ToQName Lsif.DefinitionMoniker_key where
   toQName (Lsif.DefinitionMoniker_key defn Nothing) =
-    Glean.keyOf defn >>= toQName
+    Glean.keyOf defn >>= \a -> toQName a
   toQName (Lsif.DefinitionMoniker_key defn (Just moniker)) = do
     Lsif.Moniker_key kind _scheme ident <- Glean.keyOf moniker
     base <- symbolName defn

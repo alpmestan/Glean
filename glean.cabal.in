@@ -114,7 +114,7 @@ common deps
         json,
         regex-base,
         regex-pcre,
-        base >=4.11.1 && <4.15,
+        base >=4.11.1 && <4.16,
         array ^>=0.5.2.0,
         async ^>=2.2.1,
         attoparsec ^>=0.13.2.3,
@@ -141,7 +141,7 @@ common deps
         tar ^>=0.5.1.0,
         ghc-prim >=0.5.2.0 && <0.7,
         parsec ^>=3.1.13.0,
-        haxl >= 2.1.2.0 && < 2.4,
+        haxl >= 2.1.2.0 && < 2.5,
         hinotify ^>= 0.4.1
 
 common hsc2hs-cpp
@@ -941,7 +941,7 @@ executable glean-server
         glean:core,
         glean:db,
         glean:util,
-        haskeline >=0.7.3 && <0.8,
+        haskeline >=0.7.3 && <0.9,
         json,
         thrift-server
 
@@ -968,7 +968,7 @@ library shell-lib
         glean:indexers,
         glean:util,
         glean:lsif,
-        haskeline >=0.7.3 && <0.8,
+        haskeline >=0.7.3 && <0.9,
         json,
         monad-control,
         prettyprinter-ansi-terminal,

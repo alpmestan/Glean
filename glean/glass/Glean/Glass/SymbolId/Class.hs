@@ -92,7 +92,7 @@ type SymbolKeyType p =
 
 -- | Generically traverse predicates for keys
 toSymbolPredicate :: (SymbolKeyType p) => p -> Glean.RepoHaxl u w [Text]
-toSymbolPredicate k = Glean.keyOf k >>= toSymbol
+toSymbolPredicate k = Glean.keyOf k >>= \x -> toSymbol x
 
 -- TODO: use a short string builder
 (<:>) :: (Symbol a, Symbol b) => a -> b -> Glean.RepoHaxl u w [Text]

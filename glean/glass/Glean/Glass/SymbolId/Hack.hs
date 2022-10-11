@@ -56,7 +56,7 @@ instance Symbol Hack.EnumDeclaration_key where
   toSymbol (Hack.EnumDeclaration_key qn) = toSymbol qn
 
 instance Symbol Hack.EnumDeclaration where
-  toSymbol k = Glean.keyOf k >>= toSymbol
+  toSymbol k = Glean.keyOf k >>= \a -> toSymbol a
 
 instance Symbol Hack.Enumerator_key where
   toSymbol (Hack.Enumerator_key name decl) = decl <:> name
@@ -87,10 +87,10 @@ instance Symbol Hack.NamespaceDeclaration_key where
   toSymbol (Hack.NamespaceDeclaration_key qn) = ("ns" :) <$> toSymbol qn
 
 instance Symbol Hack.NamespaceDeclaration where
-  toSymbol k = Glean.keyOf k >>= toSymbol
+  toSymbol k = Glean.keyOf k >>= \a -> toSymbol a
 
 instance Symbol Hack.NamespaceQName where
-  toSymbol k = Glean.keyOf k >>= toSymbol
+  toSymbol k = Glean.keyOf k >>= \a -> toSymbol a
 
 instance Symbol Hack.NamespaceQName_key where
   toSymbol (Hack.NamespaceQName_key name parent) = parent <:> name
@@ -99,7 +99,7 @@ instance Symbol Hack.GlobalConstDeclaration_key where
   toSymbol (Hack.GlobalConstDeclaration_key qn) = toSymbol qn
 
 instance Symbol Hack.QName where
-  toSymbol k = Glean.keyOf k >>= toSymbol
+  toSymbol k = Glean.keyOf k >>= \a -> toSymbol a
 
 instance Symbol Hack.QName_key where
   toSymbol (Hack.QName_key name Nothing) = toSymbol name
@@ -116,17 +116,17 @@ instance Symbol Hack.Name where
 
 instance ToQName Hack.Declaration where
   toQName e = case e of
-    Hack.Declaration_classConst x -> Glean.keyOf x >>= toQName
+    Hack.Declaration_classConst x -> Glean.keyOf x >>= \a -> toQName a
     Hack.Declaration_container x -> toQName x
-    Hack.Declaration_enumerator x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_function_ x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_globalConst x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_method x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_module x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_namespace_ x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_property_ x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_typeConst x -> Glean.keyOf x >>= toQName
-    Hack.Declaration_typedef_ x -> Glean.keyOf x >>= toQName
+    Hack.Declaration_enumerator x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_function_ x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_globalConst x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_method x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_module x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_namespace_ x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_property_ x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_typeConst x -> Glean.keyOf x >>= \a -> toQName a
+    Hack.Declaration_typedef_ x -> Glean.keyOf x >>= \a -> toQName a
     Hack.Declaration_EMPTY -> return $ Left "unknown Declaration"
 
 instance ToQName Hack.ClassConstDeclaration_key where
@@ -137,10 +137,10 @@ instance ToQName Hack.ModuleDeclaration_key where
       Right . (, Name "") . Name . intercalate "/" <$> toSymbol name
 
 instance ToQName Hack.ContainerDeclaration where
-  toQName (Hack.ContainerDeclaration_class_ x) = Glean.keyOf x >>= toQName
-  toQName (Hack.ContainerDeclaration_enum_ x) = Glean.keyOf x >>= toQName
-  toQName (Hack.ContainerDeclaration_interface_ x) = Glean.keyOf x >>= toQName
-  toQName (Hack.ContainerDeclaration_trait x) = Glean.keyOf x >>= toQName
+  toQName (Hack.ContainerDeclaration_class_ x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Hack.ContainerDeclaration_enum_ x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Hack.ContainerDeclaration_interface_ x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Hack.ContainerDeclaration_trait x) = Glean.keyOf x >>= \a -> toQName a
   toQName Hack.ContainerDeclaration_EMPTY =
     return $ Left "unknown ContainerDeclaration"
 
@@ -178,13 +178,13 @@ instance ToQName Hack.TypedefDeclaration_key where
   toQName (Hack.TypedefDeclaration_key qn) = toQName qn
 
 instance ToQName Hack.NamespaceDeclaration_key where
-  toQName (Hack.NamespaceDeclaration_key qn) = Glean.keyOf qn >>= toQName
+  toQName (Hack.NamespaceDeclaration_key qn) = Glean.keyOf qn >>= \a -> toQName a
 
 instance ToQName Hack.NamespaceQName_key where
   toQName (Hack.NamespaceQName_key name parent) = pairToQName name parent
 
 instance ToQName Hack.QName where
-  toQName x = Glean.keyOf x >>= toQName
+  toQName x = Glean.keyOf x >>= \a -> toQName a
 
 instance ToQName Hack.QName_key where
   toQName (Hack.QName_key name (Just ns)) = pairToQName name ns

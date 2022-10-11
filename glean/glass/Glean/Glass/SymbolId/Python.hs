@@ -71,11 +71,11 @@ declarationLocation decl = var $ \file ->
   ]
 
 instance ToQName Py.Declaration where
-  toQName (Py.Declaration_cls x) = Glean.keyOf x >>= toQName
-  toQName (Py.Declaration_func x) = Glean.keyOf x >>= toQName
-  toQName (Py.Declaration_module x) = Glean.keyOf x >>= toQName
-  toQName (Py.Declaration_variable x) = Glean.keyOf x >>= toQName
-  toQName (Py.Declaration_imp x) = Glean.keyOf x >>= toQName
+  toQName (Py.Declaration_cls x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Py.Declaration_func x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Py.Declaration_module x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Py.Declaration_variable x) = Glean.keyOf x >>= \a -> toQName a
+  toQName (Py.Declaration_imp x) = Glean.keyOf x >>= \a -> toQName a
   toQName Py.Declaration_EMPTY = return $ Left "unknown Declaration"
 
 instance ToQName Py.ImportStatement_key where

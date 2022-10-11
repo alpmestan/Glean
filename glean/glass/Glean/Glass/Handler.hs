@@ -448,7 +448,7 @@ searchSymbol env@Glass.Env{..} req@SymbolSearchRequest{..} RequestOptions{..} =
       Nothing -> pure (Query.RepoSearchResult [])
       Just names -> withGleanDBs method env req names $ \gleanDBs -> do
         res <- backendRunHaxl GleanBackend{..} $ Glean.queryAllRepos $ do
-          res <- mapM (runSearch repo mlimit terse) searchQs -- concurrently
+          res <- mapM (\q -> runSearch repo mlimit terse q) searchQs -- concurrently
           return (nubOrd (concat res)) -- remove latter duplicates in n*log n
         pure (Query.RepoSearchResult res, Nothing)
 
@@ -463,7 +463,7 @@ runSearch repo mlimit terse (Query.Search query) = do
   names <- case query of
     Query.Fast q -> searchWithLimit mlimit q
     Query.Slow q -> searchWithTimeLimit mlimit queryTimeLimit q
-  mapM (processSymbolResult terse repo) names
+  mapM (\n -> processSymbolResult terse repo n) names
   where
     queryTimeLimit = 5000 -- milliseconds, make this a flag?
 
@@ -715,9 +715,9 @@ fetchDocumentSymbols (FileReference scsrepo path) mlimit includeRefs b mlang =
 
       -- mark up symbols into normal format with static attributes
       refs1 <- withRepo fileRepo $
-        mapM (toReferenceSymbol scsrepo srcFile offsets) xrefs
+        mapM (\x -> toReferenceSymbol scsrepo srcFile offsets x) xrefs
       defs1 <- withRepo fileRepo $
-        mapM (toDefinitionSymbol scsrepo srcFile offsets) defns
+        mapM (\d -> toDefinitionSymbol scsrepo srcFile offsets d) defns
 
       let (refs, defs) = Attributes.extendAttributes
             (Attributes.fromSymbolId Attributes.SymbolKindAttr)
@@ -895,8 +895,8 @@ toReferenceSymbol repoName file srcOffsets (Code.XRefLocation {..}, entity) = do
 
   target <- rangeSpanToLocationRange repoName location_file
     location_location
-  targetNameRange <- forM location_span
-    (memoRangeSpanToRange location_file . Code.RangeSpan_span)
+  targetNameRange <- forM location_span $ \s ->
+    memoRangeSpanToRange location_file (Code.RangeSpan_span s)
 
   return $ (entity,) $
     ReferenceRangeSymbolX sym range target attributes targetNameRange
