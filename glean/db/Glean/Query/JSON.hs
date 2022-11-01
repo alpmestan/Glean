@@ -42,6 +42,10 @@ import Data.Word (Word8, Word64)
 import Foreign.Marshal.Utils (copyBytes)
 import Safe (atMay)
 
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key as Key
+#endif
+
 import Thrift.Protocol.JSON.Base64
 import Util.Buffer (ascii, liftST)
 import qualified Util.Buffer as Buffer
@@ -425,7 +429,11 @@ instance Show OrderedValue where
 
 instance Aeson.ToJSON OrderedValue where
   toJSON (OrderedObject fields) =
+#if MIN_VERSION_aeson(2,0,0)
+    Aeson.object [ (Key.fromText f, toJSON v) | (f,v) <- fields ]
+#else
     Aeson.object [ (f, toJSON v) | (f,v) <- fields ]
+#endif
   toJSON (OrderedArray arr) = Aeson.Array (Vector.map toJSON arr)
   toJSON (OrderedValue val) = toJSON val
 

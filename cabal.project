@@ -16,8 +16,16 @@ packages:
 tests: True
 
 allow-newer:
+ aeson:bytestring,
+ aeson:ghc-prim,
+ aeson:template-haskell,
  haskeline:base,
- glean:ghc-prim,
+ haskell-names:aeson,
+ haskell-names:bytestring,
+ haskell-names:haskell-src-exts,
+ haxl:aeson,
+ haxl:bytestring,
+ haxl:time,
  vector-fftw:base,
 
 constraints:

@@ -32,7 +32,11 @@ import Control.Exception
 import Control.Monad
 import Data.Coerce
 import qualified Data.Vector.Storable as VS
+#if MIN_VERSION_base(4,16,0)
+import Foreign hiding (with, And)
+#else
 import Foreign hiding (with)
+#endif
 import Foreign.C
 
 import Foreign.CPP.HsStruct
